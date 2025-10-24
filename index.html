@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SCL CHAT</title>
+  <style>
+    body {
+      background-color: #2c3e3b;
+      color: #ecf0f1;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    #app {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    #name-form {
+      background-color: #344946;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    #name-input {
+      padding: 10px;
+      width: 70%;
+      border-radius: 4px;
+      border: 1px solid #555;
+      background-color: #2f423f;
+      color: white;
+    }
+    #join-btn {
+      padding: 10px 16px;
+      margin-left: 8px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #chat-box {
+      display: none;
+      background-color: #344946;
+      padding: 16px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    #messages {
+      height: 400px;
+      overflow-y: auto;
+      background-color: #2f423f;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    #message-input {
+      width: 70%;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      background-color: #2f423f;
+      color: white;
+    }
+    button {
+      padding: 10px 16px;
+      margin-left: 8px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .msg {
+      margin-bottom: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid #3a504d;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>💬 SCL CHAT</h1>
+
+    <div id="name-form">
+      <input type="text" id="name-input" placeholder="Ваше имя" maxlength="20" />
+      <button id="join-btn" onclick="joinChat()">Войти в чат</button>
+    </div>
+
+    <div id="chat-box">
+      <div id="messages"></div>
+      <input type="text" id="message-input" placeholder="Напишите сообщение..." />
+      <button onclick="sendMessage()">Отправить</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // Импорты Firebase (без пробелов!)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    // Твоя конфигурация
+    const firebaseConfig = {
+      apiKey: "AIzaSyADMOLE0R6qqXu9fmhFsWg_vYk6JY9Vmbw",
+      authDomain: "slc-chat-6fa2e.firebaseapp.com",
+      projectId: "slc-chat-6fa2e",
+      storageBucket: "slc-chat-6fa2e.firebasestorage.app",
+      messagingSenderId: "1065646616913",
+      appId: "1:1065646616913:web:b0d849f6315cbc2258a370"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentName = null;
+
+    window.joinChat = () => {
+      const nameInput = document.getElementById("name-input");
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Пожалуйста, введите имя.");
+        return;
+      }
+      currentName = name;
+      document.getElementById("name-form").style.display = "none";
+      document.getElementById("chat-box").style.display = "block";
+      document.getElementById("message-input").focus();
+    };
+
+    window.sendMessage = async () => {
+      const input = document.getElementById("message-input");
+      const text = input.value.trim();
+      if (!text || !currentName) return;
+
+      try {
+        await addDoc(collection(db, "messages"), {
+          text,
+          name: currentName,
+          createdAt: serverTimestamp()
+        });
+        input.value = "";
+      } catch (e) {
+        console.error("Ошибка:", e);
+        alert("Не удалось отправить сообщение.");
+      }
+    };
+
+    // Прослушка сообщений в реальном времени
+    const messagesDiv = document.getElementById("messages");
+    const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+    onSnapshot(q, (snapshot) => {
+      messagesDiv.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const msg = doc.data();
+        const el = document.createElement("div");
+        el.className = "msg";
+        el.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
+        messagesDiv.appendChild(el);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+  </script>
+</body>
+</html>
